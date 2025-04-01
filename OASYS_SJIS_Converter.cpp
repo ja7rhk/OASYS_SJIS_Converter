@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
 	delete[] data;
 
 	std::cout << num_byte << " bytes" << std::endl;
-	std::cout << ".txtファイルへ変換が完了しました。" << std::endl;
+	std::cout << "S-JISコードでテキストファイルに出力しました。" << std::endl;
 
 	return 0;
 }

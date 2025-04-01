@@ -5,6 +5,10 @@
     {
       "AbsoluteMoniker": "D:0:0:{E5990913-2E51-46B3-B337-62ED84D766F6}|OASYS_SJIS_Converter.vcxproj|D:\\Visual Studio 2022\\OASYS_SJIS_Converter\\OASYS_SJIS_Converter.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{E5990913-2E51-46B3-B337-62ED84D766F6}|OASYS_SJIS_Converter.vcxproj|solutionrelative:OASYS_SJIS_Converter.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E5990913-2E51-46B3-B337-62ED84D766F6}|OASYS_SJIS_Converter.vcxproj|D:\\Visual Studio 2022\\OASYS_SJIS_Converter\\README.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}",
+      "RelativeMoniker": "D:0:0:{E5990913-2E51-46B3-B337-62ED84D766F6}|OASYS_SJIS_Converter.vcxproj|solutionrelative:README.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
     }
   ],
   "DocumentGroupContainers": [
@@ -14,17 +18,30 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "README.md",
+              "DocumentMoniker": "D:\\Visual Studio 2022\\OASYS_SJIS_Converter\\README.md",
+              "RelativeDocumentMoniker": "README.md",
+              "ToolTip": "D:\\Visual Studio 2022\\OASYS_SJIS_Converter\\README.md",
+              "RelativeToolTip": "README.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-04-01T15:18:51.278Z",
+              "EditorCaption": ""
+            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "OASYS_SJIS_Converter.cpp",
               "DocumentMoniker": "D:\\Visual Studio 2022\\OASYS_SJIS_Converter\\OASYS_SJIS_Converter.cpp",
               "RelativeDocumentMoniker": "OASYS_SJIS_Converter.cpp",
-              "ToolTip": "D:\\Visual Studio 2022\\OASYS_SJIS_Converter\\OASYS_SJIS_Converter.cpp",
-              "RelativeToolTip": "OASYS_SJIS_Converter.cpp",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAMEAAAACAAAAAAAAAA==",
+              "ToolTip": "D:\\Visual Studio 2022\\OASYS_SJIS_Converter\\OASYS_SJIS_Converter.cpp*",
+              "RelativeToolTip": "OASYS_SJIS_Converter.cpp*",
+              "ViewState": "AgIAAK4AAAAAAAAAAAAAAMcAAAAYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2025-04-01T15:05:40.92Z",
               "EditorCaption": ""
