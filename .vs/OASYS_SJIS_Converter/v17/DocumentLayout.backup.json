@@ -1,0 +1,37 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\Visual Studio 2022\\OASYS_SJIS_Converter\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{E5990913-2E51-46B3-B337-62ED84D766F6}|OASYS_SJIS_Converter.vcxproj|D:\\Visual Studio 2022\\OASYS_SJIS_Converter\\OASYS_SJIS_Converter.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{E5990913-2E51-46B3-B337-62ED84D766F6}|OASYS_SJIS_Converter.vcxproj|solutionrelative:OASYS_SJIS_Converter.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "OASYS_SJIS_Converter.cpp",
+              "DocumentMoniker": "D:\\Visual Studio 2022\\OASYS_SJIS_Converter\\OASYS_SJIS_Converter.cpp",
+              "RelativeDocumentMoniker": "OASYS_SJIS_Converter.cpp",
+              "ToolTip": "D:\\Visual Studio 2022\\OASYS_SJIS_Converter\\OASYS_SJIS_Converter.cpp",
+              "RelativeToolTip": "OASYS_SJIS_Converter.cpp",
+              "ViewState": "AgIAAKUAAAAAAAAAAAAQwMsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-04-01T15:05:40.92Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
