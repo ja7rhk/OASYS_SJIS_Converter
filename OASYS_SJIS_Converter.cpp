@@ -81,8 +81,6 @@ int main(int argc, char* argv[])
 
 	// 出力ファイル名
 	std::string outputFile = inputFile.substr(0, idx) + ".txt";
-	std::cout << "output file = \"" << outputFile << "\"" << std::endl;
-
 	std::ofstream ofs(outputFile, std::ios_base::binary);
 	if (!ofs)
 	{
@@ -196,8 +194,10 @@ int main(int argc, char* argv[])
 	ofs.close();
 	delete[] data;
 
-	std::cout << num_byte << " bytes" << std::endl;
 	std::cout << "S-JISコードでテキストファイルに出力しました。" << std::endl;
+	std::cout << "output file = \"" << outputFile << "\"" << std::endl;
+	std::cout << num_byte << " bytes" << std::endl;
+	std::cout << std::endl;
 
 	return 0;
 }
