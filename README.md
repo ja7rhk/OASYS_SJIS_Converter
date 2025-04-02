@@ -6,7 +6,7 @@ OASYS専用機の文書ファイル(.oas)を簡易的にシフトJISコードに変換してテキストファイ
 
 ■コマンドプロンプトの例
 
-	> OASYS_SJIS_Converter 123.oas
+	> OASYS_SJIS_Converter sample.oas
 
 ■バッチファイルの例
 
