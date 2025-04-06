@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
 	if (PAGE_LINRS_INDEX < size)
 		page_size = data[PAGE_LINRS_INDEX];
 
-	for (int i = OASYS_BASE; i < (size - 1); i++)
+	for (int i = OASYS_BASE; i < (size - 2); i++)
 	{
 		bool w_flag = false;	// word flag
 		wchar_t sjis;
@@ -135,11 +135,9 @@ int main(int argc, char* argv[])
 		// NULLコードを検出した場合の処理 (改行)
 		if (jis_high == 0)
 		{
-			// 下線付きの場合はbit7が1になっているので両方チェックする
-			//char low_byte = jis_low & 0x7F;
-			//if ((low_byte >= 0x20) && (low_byte <= 0x74))
-			// (0x7D)が混じっているので除く
-			if (is_ascii(jis_low & 0x7F) && jis_low != 0x7D)
+			wchar_t post_jis_low = data[i + 2] & 0x7F;
+			// NULLに続く2バイトがASCiiコードの範囲内か検査する
+			if (is_ascii(jis_low & 0x7F) && is_ascii(post_jis_low))
 			{
 				// 次のバイトがASCIIまたはJISコードの場合はLFを挿入する
 				ofs << "\n";
