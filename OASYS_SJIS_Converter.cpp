@@ -2,12 +2,13 @@
 #include <string>
 #include <stdio.h>
 #include <mbstring.h>
-
-#include <string>
-#include <stdio.h>
-#include <iostream>
 #include <sstream>
 #include <fstream>
+
+#define HEADER_BASE	512		// 0x200
+#define OASYS_BASE	768		// 0x300
+#define	PAGE_LINRS_INDEX  HEADER_BASE + 8	// 1ページ当たりの行数
+
 
 // JISコードからSJISコードに変換
 wchar_t jis2sjis(wchar_t jis) {
@@ -47,7 +48,7 @@ bool is_ascii(char ascii) {
 bool is_jis(wchar_t jis) {
 
 	wchar_t jis_high = (jis >> 8) & 0xFF;
-	wchar_t jis_low  = jis & 0xFF;
+	wchar_t jis_low = jis & 0xFF;
 
 	// 全角英数、かな
 	if ((jis_high >= 0x21 && jis_high <= 0x27) && (jis_low >= 0x21 && jis_low <= 0x7E))
@@ -100,7 +101,7 @@ int main(int argc, char* argv[])
 	const uint64_t size = ifs.tellg();
 	ifs.seekg(0);
 
-	//読み込んだデータをwchar_t型に出力する
+	//読み込んだデータをchar型に出力する
 	char* data = new char[size];
 	ifs.read(data, size);
 	ifs.close();
@@ -114,15 +115,20 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
+	// OASYS本文を変換
 	int num_byte = 0;
+	int num_line = 0;
+	int page_size = 0xFF;
+	if (PAGE_LINRS_INDEX < size)
+		page_size = data[PAGE_LINRS_INDEX];
 
-	for (int i = 0; i < (size - 1); i++)
+	for (int i = OASYS_BASE; i < (size - 1); i++)
 	{
 		bool w_flag = false;	// word flag
 		wchar_t sjis;
 
-		char jis_high = data[i];
-		char jis_low = data[i + 1];
+		wchar_t jis_high = data[i] & 0xFF;
+		wchar_t jis_low = data[i + 1] & 0xFF;
 
 		wchar_t jis = (jis_high << 8) + jis_low;
 
@@ -130,19 +136,28 @@ int main(int argc, char* argv[])
 		if (jis_high == 0)
 		{
 			// 下線付きの場合はbit7が1になっているので両方チェックする
-			char low_byte = jis_low & 0x7F;
-
-			if ((low_byte < 0x20) || (low_byte > 0x74))
-			{
-				// 次のバイトがASCIIまたはJISコード以外は無視する
-				continue;
-			}
-			else if ((low_byte >= 0x20) && (low_byte <= 0x74))
+			//char low_byte = jis_low & 0x7F;
+			//if ((low_byte >= 0x20) && (low_byte <= 0x74))
+			// (0x7D)が混じっているので除く
+			if (is_ascii(jis_low & 0x7F) && jis_low != 0x7D)
 			{
 				// 次のバイトがASCIIまたはJISコードの場合はLFを挿入する
-				jis_low = 0x0A;
-				ofs.write((char*)(&jis_low), sizeof(char));
+				ofs << "\n";
 				num_byte++;
+				num_line++;
+				if (num_line == page_size)
+				{
+					ofs << "\n";
+					ofs << "-----<< 改頁 >>-----\n";
+					ofs << "\n";
+					num_line = 0;
+				}
+				continue;
+			}
+			//else if ((low_byte < 0x20) || (low_byte > 0x74))
+			else
+			{
+				// 次のバイトがASCIIまたはJISコード以外は無視する
 				continue;
 			}
 		}
@@ -150,14 +165,13 @@ int main(int argc, char* argv[])
 		// 半角英数の場合 (ASCIIコード)
 		if ((jis & 0x8080) == 0x0080)
 		{
-			// ASCIIコード (2バイト目に0x80を足している)
-			jis_low &= 0x7F;
-			if (is_ascii(jis_low))
+			if (is_ascii(jis_high))
 			{
 				ofs.write((char*)(&jis_high), sizeof(char));
 				num_byte++;
 			}
 			// 2バイト目が'_'の場合は半角詰めなので変換しない
+			jis_low &= 0x7F;
 			if (is_ascii(jis_low) && jis_low != 0x5F)
 			{
 				ofs.write((char*)(&jis_low), sizeof(char));
@@ -171,15 +185,18 @@ int main(int argc, char* argv[])
 		if ((jis & 0x8080) == 0x8080)
 		{
 			// 半角カナ"･･"の場合はSJISの"･･"に変換する
-			if ((jis == 0x8585))
+			if (jis == 0x8585)
 			{
 				sjis = 0xA5A5;	// "･･"
-				w_flag = true;
+				ofs.write((char*)(&sjis), sizeof(char) * 2);
+				num_byte += 2;
+				i++;
+				continue;
 			}
-			// それ以外は半角英数と同じに扱う
+
 			jis_high &= 0x7F;
 			jis_low &= 0x7F;
-			if (is_ascii(jis_low))
+			if (is_ascii(jis_high))
 			{
 				ofs.write((char*)(&jis_high), sizeof(char));
 				num_byte++;
@@ -224,6 +241,11 @@ int main(int argc, char* argv[])
 			case 0x203F:
 				// AS-ISで半角スペース2個
 				sjis = 0x2020;
+				w_flag = true;
+				break;
+			case 0x2C66:
+				// AS-ISで全角空白(?)
+				sjis = 0x8140;
 				w_flag = true;
 				break;
 			case 0x2F2A:
