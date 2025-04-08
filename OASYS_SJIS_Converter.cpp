@@ -4,62 +4,13 @@
 #include <mbstring.h>
 #include <sstream>
 #include <fstream>
+#include "OASYS.h"
 
 #define HEADER_BASE	512		// 0x200
 #define OASYS_BASE	768		// 0x300
 #define	PAGE_LINRS_INDEX  HEADER_BASE + 8	// 1ページ当たりの行数
 
-
-// JISコードからSJISコードに変換
-wchar_t jis2sjis(wchar_t jis) {
-
-	wchar_t c1 = (jis >> 8) & 0xFF;
-	wchar_t c2 = jis & 0xFF;
-
-	if (c1 & 0x0001)
-	{
-		if (c2 < 0x60)
-			c2 += 0x1F;
-		else
-			c2 += 0x20;
-	}
-	else
-	{
-		c2 += 0x7E;
-	}
-	if (c1 < 0x5F)
-		c1 = (c1 + 0xE1) >> 1;
-	else
-		c1 = (c1 + 0x161) >> 1;
-
-	return c1 << 8 | c2;
-}
-
-// ASCIIコード範囲内かチェック
-bool is_ascii(char ascii) {
-
-	if (ascii >= 0x20 && ascii < 0x7F)
-		return true;
-
-	return false;
-}
-
-// JISコード範囲内かチェック
-bool is_jis(wchar_t jis) {
-
-	wchar_t jis_high = (jis >> 8) & 0xFF;
-	wchar_t jis_low = jis & 0xFF;
-
-	// 全角英数、かな
-	if ((jis_high >= 0x21 && jis_high <= 0x27) && (jis_low >= 0x21 && jis_low <= 0x7E))
-		return true;
-
-	// 漢字コード
-	if ((jis_high >= 0x30 && jis_high <= 0x74) && (jis_low >= 0x21 && jis_low <= 0x7E))
-		return true;
-
-	return false;
-}
+OASYS oasys;
 
 int main(int argc, char* argv[])
 {
@@ -127,17 +78,17 @@ int main(int argc, char* argv[])
 		bool w_flag = false;	// word flag
 		wchar_t sjis;
 
-		wchar_t jis_high = data[i] & 0xFF;
-		wchar_t jis_low = data[i + 1] & 0xFF;
+		char jis_high = data[i];
+		char jis_low = data[i + 1];
 
 		wchar_t jis = (jis_high << 8) + jis_low;
 
 		// NULLコードを検出した場合の処理 (改行)
 		if (jis_high == 0)
 		{
-			wchar_t post_jis_low = data[i + 2] & 0x7F;
+			char post_jis_low = data[i + 2] & 0x7F;
 			// NULLに続く2バイトがASCiiコードの範囲内か検査する
-			if (is_ascii(jis_low & 0x7F) && is_ascii(post_jis_low))
+			if (oasys.is_ascii(jis_low & 0x7F) && oasys.is_ascii(post_jis_low))
 			{
 				// 次のバイトがASCIIまたはJISコードの場合はLFを挿入する
 				ofs << "\n";
@@ -163,14 +114,14 @@ int main(int argc, char* argv[])
 		// 半角英数の場合 (ASCIIコード)
 		if ((jis & 0x8080) == 0x0080)
 		{
-			if (is_ascii(jis_high))
+			if (oasys.is_ascii(jis_high))
 			{
 				ofs.write((char*)(&jis_high), sizeof(char));
 				num_byte++;
 			}
 			// 2バイト目が'_'の場合は半角詰めなので変換しない
 			jis_low &= 0x7F;
-			if (is_ascii(jis_low) && jis_low != 0x5F)
+			if (oasys.is_ascii(jis_low) && jis_low != 0x5F)
 			{
 				ofs.write((char*)(&jis_low), sizeof(char));
 				num_byte++;
@@ -179,32 +130,26 @@ int main(int argc, char* argv[])
 			continue;
 		}
 
-		// 上付き文字の場合 (ASCIIコード)
+		// 半角カナまたは上付き文字の場合 (ASCIIコード)
 		if ((jis & 0x8080) == 0x8080)
 		{
-			// 半角カナ"･･"の場合はSJISの"･･"に変換する
-			if (jis == 0x8585)
-			{
-				sjis = 0xA5A5;	// "･･"
-				ofs.write((char*)(&sjis), sizeof(char) * 2);
-				num_byte += 2;
-				i++;
-				continue;
-			}
+			// 1文字目のOASYSコードをASCIIに変換
+			Ascii_Kana kana = oasys.oasys_to_sjis(jis_high);
+			ofs.write((char*)(&kana.c1), sizeof(char));
+			num_byte++;
+			if (kana.c2)
+				ofs.write((char*)(&kana.c2), sizeof(char));
 
-			jis_high &= 0x7F;
-			jis_low &= 0x7F;
-			if (is_ascii(jis_high))
-			{
-				ofs.write((char*)(&jis_high), sizeof(char));
-				num_byte++;
-			}
+			// 2文字目のOASYSコードをASCIIに変換
+			kana = oasys.oasys_to_sjis(jis_low);
 			// 2バイト目が'_'の場合は半角詰めなので変換しない
-			if (is_ascii(jis_low) && jis_low != 0x5F)
+			if (kana.c1 != 0x5F)
 			{
-				ofs.write((char*)(&jis_low), sizeof(char));
+				ofs.write((char*)(&kana.c1), sizeof(char));
 				num_byte++;
 			}
+			if (kana.c2)
+				ofs.write((char*)(&kana.c2), sizeof(char));
 			i++;
 			continue;
 		}
@@ -212,9 +157,9 @@ int main(int argc, char* argv[])
 		// 全角英数、かな
 		if ((jis & 0x8080) == 0)
 		{
-			if (is_jis(jis))
+			if (oasys.is_jis(jis))
 			{
-				sjis = jis2sjis(jis);
+				sjis = oasys.jis2sjis(jis);
 				w_flag = true;
 			}
 		}
@@ -223,9 +168,9 @@ int main(int argc, char* argv[])
 		if ((jis & 0x8080) == 0x8000)
 		{
 			jis &= 0x7F7F;
-			if (is_jis(jis))
+			if (oasys.is_jis(jis))
 			{
-				sjis = jis2sjis(jis);
+				sjis = oasys.jis2sjis(jis);
 				w_flag = true;
 			}
 		}
