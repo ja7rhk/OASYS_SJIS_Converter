@@ -183,9 +183,9 @@ private:
 		{0xBA, DAKUTEN},		// ゴ
 		{0xBB, DAKUTEN},		// ザ
 		{0xBC, DAKUTEN},		// ジ
-		{0xBD, DAKUTEN},		// ヅ
-		{0xBE, DAKUTEN},		// デ
-		{0xBF, DAKUTEN},		// ド
+		{0xBD, DAKUTEN},		// ズ
+		{0xBE, DAKUTEN},		// ゼ
+		{0xBF, DAKUTEN},		// ゾ
 
 		// 濁点付き半角カナ (0xF0 - 0xFF)
 		{0xC0, DAKUTEN},		// ダ
