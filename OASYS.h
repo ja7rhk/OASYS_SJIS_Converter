@@ -15,7 +15,7 @@ enum KANA_MOD
 
 typedef struct { char c1; char c2; } Ascii_Kana;
 typedef struct { int kana_code; KANA_MOD kana_mod; } Hankaku_Kana;
-typedef struct { char data[512]; char hk[5]; } Oasys_Frame;
+typedef struct { char data[512]; char attr[5]; } Oasys_Frame;
 
 class OASYS
 {
@@ -50,7 +50,7 @@ private:
 	bool is_jis(wchar_t jis);
 
 	// ”¼ŠpOASYS•¶Žš‚ðASCIIƒJƒi‚É•ÏŠ·
-	Ascii_Kana hankaku_oasys_to_sjis_kana(char h);
+	Ascii_Kana hankaku_to_sjis_kana(char h);
 
 	Hankaku_Kana hankaku_kana[128] =
 	{

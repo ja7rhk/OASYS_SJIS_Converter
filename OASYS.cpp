@@ -31,8 +31,8 @@ void OASYS::clear_frame() {
 	}
 	for (int i = 0; i < 5; i++)
 	{
-		OASYS::oasys_frame.hk[i] = 0;
-		OASYS::sjis_frame.hk[i] = 0;
+		OASYS::oasys_frame.attr[i] = 0;
+		OASYS::sjis_frame.attr[i] = 0;
 	}
 }
 
@@ -88,7 +88,7 @@ bool OASYS::is_jis(wchar_t jis) {
 }
 
 
-Ascii_Kana OASYS::hankaku_oasys_to_sjis_kana(char kana) {
+Ascii_Kana OASYS::hankaku_to_sjis_kana(char kana) {
 
 	Hankaku_Kana k = hankaku_kana[kana & 0x7F];
 
@@ -157,14 +157,14 @@ int OASYS::convert_frame() {
 		if ((jis & 0x8080) == 0x8080)
 		{
 			// 1文字目のOASYSコードをASCIIに変換
-			Ascii_Kana kana = OASYS::hankaku_oasys_to_sjis_kana(jis_high);
+			Ascii_Kana kana = OASYS::hankaku_to_sjis_kana(jis_high);
 			OASYS::sjis_frame.data[sjis_ptr] = kana.c1; sjis_ptr++;
 			if (kana.c2)
 			{
 				OASYS::sjis_frame.data[sjis_ptr] = kana.c1; sjis_ptr++;
 			}
 			// 2文字目のOASYSコードをASCIIに変換
-			kana = OASYS::hankaku_oasys_to_sjis_kana(jis_low);
+			kana = OASYS::hankaku_to_sjis_kana(jis_low);
 			// 2バイト目が'_'の場合は半角詰めなので変換しない
 			if (kana.c1 != 0x5F)
 			{
@@ -232,32 +232,32 @@ int OASYS::convert_frame() {
 	// LF挿入
 	OASYS::sjis_frame.data[sjis_ptr] = 0x0A; sjis_ptr++;
 
-	int house_keeping = 0;
+	int attribute = 0;
 
 	for (int i = 0; i < 5; i++)
 	{
-		 int val = OASYS::oasys_frame.hk[i] & 0xFF;
-		 OASYS::sjis_frame.hk[i] = val;
-		 house_keeping += val;
+		 int val = OASYS::oasys_frame.attr[i] & 0xFF;
+		 OASYS::sjis_frame.attr[i] = val;
+		 attribute += val;
 	}
 
-	if (house_keeping == 0)
+	if (attribute == 0)
 		// 変換は正常に終了した。
-		// house_keeping 5ビット{0,0,0,0,0}の場合は次もOASYSフレーム
+		// attribute 5ビット{0,0,0,0,0}の場合は次もOASYSフレーム
 		return 0;
-	else if (house_keeping == 0x01)
+	else if (attribute == 0x01)
 		// 変換は正常に終了した。
 		// 次のフレームはOASYSではない
 		return 0;
-	else if (house_keeping == 0x81)
+	else if (attribute == 0x81)
 	{
 		// 変換は正常に終了した。
-		// house_keeping 5ビット{0x81,0,0,0,0}の場合は改ページ
+		// attribute 5ビット{0x81,0,0,0,0}の場合は改ページ
 		// LF挿入
 		OASYS::sjis_frame.data[sjis_ptr] = 0x0C; sjis_ptr++;
 		return 0;
 	}
-	else if (house_keeping == 0x7D)
+	else if (attribute == 0x7D)
 		// OASYSフレームではない
 		return -1;
 
@@ -286,7 +286,7 @@ int OASYS::oasys_to_text() {
 		}
 		for (int i = 0; i < 5; i++)
 		{
-			OASYS::oasys_frame.hk[i] = OASYS::buf[buf_ptr]; buf_ptr++;
+			OASYS::oasys_frame.attr[i] = OASYS::buf[buf_ptr]; buf_ptr++;
 		}
 
 		if (OASYS::convert_frame() == 0)
