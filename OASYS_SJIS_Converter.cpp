@@ -10,7 +10,7 @@
 #define OASYS_BASE	0x300		// 
 
 #define	PAGE_LINRS_INDEX	8		// 1ページ当たりの行数
-#define	LINR_WCHARS_INDEX	0x74	// 行当たりの文字数 (2バイト分)
+#define	LINE_WCHARS_INDEX	0x74	// 行当たりの文字数 (2バイト分)
 #define FOLD_WCHARS_INDEX	0x75	// 折り返し文字数 (2バイト文字分)
 #define ONLINE_BLOCKS_INDEX	0x7F	// ブロック数 (2バイト)
 
@@ -55,10 +55,6 @@ int main(int argc, char* argv[])
 	const uint64_t size = ifs.tellg();
 	ifs.seekg(0, std::ios::beg);
 
-	// 読み込んだデータをchar型に出力する
-	//char* data = new char[size];
-	//ifs.read(data, size);
-
 	// 出力ファイル名
 	std::string outputFile = inputFile.substr(0, idx) + ".txt";
 	std::ofstream ofs(outputFile, std::ios_base::binary);
@@ -77,20 +73,22 @@ int main(int argc, char* argv[])
 	int num_byte = 0;
 	int num_line = 0;
 	int page_lines = 0xFF;		// ライン数
-	int fold_wchar = 0x30;		// 行毎の文字数(2バイト文字)
+	int line_wchar = 0x30;		// 行毎の文字数(2バイト文字)
 	int online_bloacks = 0;		// ブロック数(2バイト)
 	int lines = 0;
 
 	// 書式パラメータの読出し
 	page_lines = index[PAGE_LINRS_INDEX];
-	fold_wchar = index[FOLD_WCHARS_INDEX];
+	line_wchar = index[LINE_WCHARS_INDEX];
+	//fold_wchar = index[FOLD_WCHARS_INDEX];
 
 	char obh = index[ONLINE_BLOCKS_INDEX];
 	char obl  = index[ONLINE_BLOCKS_INDEX + 1];
 	online_bloacks = obh << 8 | obl & 0xFF;
 
 	// OASYS文書の読出し
-	OASYS oasys(fold_wchar);
+	OASYS oasys(line_wchar);
+	//OASYS oasys(fold_wchar);
 	ifs.seekg(OASYS_BASE, std::ios::beg);
 	int line_cntr = 0;
 

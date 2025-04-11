@@ -5,7 +5,7 @@ OASYS::OASYS(int wchars) {
 
 	OASYS::clear_buf();
 	OASYS::clear_out();
-	OASYS::fold_wchars = wchars;
+	OASYS::line_wchars = wchars;
 }
 
 void OASYS::clear_buf() {
@@ -122,7 +122,7 @@ Ascii_Kana OASYS::hankaku_to_sjis_kana(char kana) {
 //********************************
 int OASYS::convert_frame() {
 
-	const int data_length = (OASYS::fold_wchars * 2);	// 1çsÇÃê‹ÇËï‘Çµ
+	const int data_length = (OASYS::line_wchars * 2);	// 1çsÇÃê‹ÇËï‘Çµ
 
 	int oasys_ptr = 0;
 	int sjis_ptr = 0;
@@ -269,7 +269,7 @@ int OASYS::convert_frame() {
 //***************************
 int OASYS::oasys_to_text() {
 
-	const int data_length  = (OASYS::fold_wchars * 2);		// ê‹ÇËï‘Çµí∑Ç≥(char)
+	const int data_length  = (OASYS::line_wchars * 2);		// ê‹ÇËï‘Çµí∑Ç≥(char)
 	const int frame_length = data_length + 5;	// +5 ByteÇÃHouse Keeping
 
 	int buf_ptr = 0;

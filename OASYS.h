@@ -35,7 +35,7 @@ public:
 
 private:
 
-	int fold_wchars = 0x30;		// 折り返し文字数(2バイト文字)
+	int line_wchars = 0x30;		// 折り返し文字数(2バイト文字)
 
 	Oasys_Frame oasys_frame;
 	Oasys_Frame sjis_frame;
