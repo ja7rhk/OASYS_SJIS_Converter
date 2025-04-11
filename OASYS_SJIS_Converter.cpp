@@ -6,11 +6,14 @@
 #include <fstream>
 #include "OASYS.h"
 
-#define HEADER_BASE	512		// 0x200
-#define OASYS_BASE	768		// 0x300
-#define	PAGE_LINRS_INDEX  HEADER_BASE + 8	// 1ページ当たりの行数
+#define HEADER_BASE	0x200		// 0x200
+#define OASYS_BASE	0x300		// 
 
-OASYS oasys;
+#define	PAGE_LINRS_INDEX	8		// 1ページ当たりの行数
+#define	LINR_WCHARS_INDEX	0x74	// 行当たりの文字数 (2バイト分)
+#define FOLD_WCHARS_INDEX	0x75	// 折り返し文字数 (2バイト文字分)
+#define ONLINE_BLOCKS_INDEX	0x7F	// ブロック数 (2バイト)
+
 
 int main(int argc, char* argv[])
 {
@@ -50,12 +53,11 @@ int main(int argc, char* argv[])
 	//読込サイズを調べる。
 	ifs.seekg(0, std::ios::end);
 	const uint64_t size = ifs.tellg();
-	ifs.seekg(0);
+	ifs.seekg(0, std::ios::beg);
 
-	//読み込んだデータをchar型に出力する
-	char* data = new char[size];
-	ifs.read(data, size);
-	ifs.close();
+	// 読み込んだデータをchar型に出力する
+	//char* data = new char[size];
+	//ifs.read(data, size);
 
 	// 出力ファイル名
 	std::string outputFile = inputFile.substr(0, idx) + ".txt";
@@ -66,163 +68,78 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
+	// INDEXを読み込む
+	char index[0x100];
+	ifs.seekg(HEADER_BASE, std::ios::beg);
+	ifs.read(index, 0x100);
+
 	// OASYS本文を変換
 	int num_byte = 0;
 	int num_line = 0;
-	int page_size = 0xFF;
-	if (PAGE_LINRS_INDEX < size)
-		page_size = data[PAGE_LINRS_INDEX];
+	int page_lines = 0xFF;		// ライン数
+	int fold_wchar = 0x30;		// 行毎の文字数(2バイト文字)
+	int online_bloacks = 0;		// ブロック数(2バイト)
+	int lines = 0;
 
-	for (int i = OASYS_BASE; i < (size - 2); i++)
+	// 書式パラメータの読出し
+	page_lines = index[PAGE_LINRS_INDEX];
+	fold_wchar = index[FOLD_WCHARS_INDEX];
+
+	char obh = index[ONLINE_BLOCKS_INDEX];
+	char obl  = index[ONLINE_BLOCKS_INDEX + 1];
+	online_bloacks = obh << 8 | obl & 0xFF;
+
+	// OASYS文書の読出し
+	OASYS oasys(fold_wchar);
+	ifs.seekg(OASYS_BASE, std::ios::beg);
+	int line_cntr = 0;
+
+	for (int block = 0; block < online_bloacks; block++)
 	{
-		bool w_flag = false;	// word flag
-		wchar_t sjis;
+		oasys.clear_buf();
+		oasys.clear_out();
 
-		char jis_high = data[i];
-		char jis_low = data[i + 1];
+		// BLOCKを読み込む
+		ifs.read(oasys.buf, BLOCK);
 
-		wchar_t jis = (jis_high << 8) + jis_low;
+		lines += oasys.oasys_to_text();
 
-		// NULLコードを検出した場合の処理 (改行)
-		if (jis_high == 0)
+		for (int i = 0; i < BLOCK; i++)
 		{
-			char post_jis_low = data[i + 2] & 0x7F;
-			// NULLに続く2バイトがASCiiコードの範囲内か検査する
-			if (oasys.is_ascii(jis_low & 0x7F) && oasys.is_ascii(post_jis_low))
+			char s = oasys.out[i];
+			if (s == 0)	// NULL
+				continue;
+			else if (s == 0x0A)		// LF
 			{
-				// 次のバイトがASCIIまたはJISコードの場合はLFを挿入する
 				ofs << "\n";
-				num_byte++;
-				num_line++;
-				if (num_line == page_size)
+				line_cntr++;
+				if ((line_cntr % page_lines) == 0)
 				{
 					ofs << "\n";
 					ofs << "-----<< 改頁 >>-----\n";
 					ofs << "\n";
-					num_line = 0;
+					line_cntr = 0;
 				}
-				continue;
 			}
-			//else if ((low_byte < 0x20) || (low_byte > 0x74))
+			else if (s == 0x0C)		// FF
+			{
+				ofs << "\n";
+				ofs << "-----<< 改頁 >>-----\n";
+				ofs << "\n";
+				line_cntr = 0;
+			}
 			else
-			{
-				// 次のバイトがASCIIまたはJISコード以外は無視する
-				continue;
-			}
+				// 通常のSJISコード
+				ofs.write((char*)(&s), sizeof(char));
 		}
-
-		// 半角英数の場合 (ASCIIコード)
-		if ((jis & 0x8080) == 0x0080)
-		{
-			if (oasys.is_ascii(jis_high))
-			{
-				ofs.write((char*)(&jis_high), sizeof(char));
-				num_byte++;
-			}
-			// 2バイト目が'_'の場合は半角詰めなので変換しない
-			jis_low &= 0x7F;
-			if (oasys.is_ascii(jis_low) && jis_low != 0x5F)
-			{
-				ofs.write((char*)(&jis_low), sizeof(char));
-				num_byte++;
-			}
-			i++;
-			continue;
-		}
-
-		// 半角カナまたは上付き文字の場合 (ASCIIコード)
-		if ((jis & 0x8080) == 0x8080)
-		{
-			// 1文字目のOASYSコードをASCIIに変換
-			Ascii_Kana kana = oasys.oasys_to_sjis(jis_high);
-			ofs.write((char*)(&kana.c1), sizeof(char));
-			num_byte++;
-			if (kana.c2)
-				ofs.write((char*)(&kana.c2), sizeof(char));
-
-			// 2文字目のOASYSコードをASCIIに変換
-			kana = oasys.oasys_to_sjis(jis_low);
-			// 2バイト目が'_'の場合は半角詰めなので変換しない
-			if (kana.c1 != 0x5F)
-			{
-				ofs.write((char*)(&kana.c1), sizeof(char));
-				num_byte++;
-			}
-			if (kana.c2)
-				ofs.write((char*)(&kana.c2), sizeof(char));
-			i++;
-			continue;
-		}
-
-		// 全角英数、かな
-		if ((jis & 0x8080) == 0)
-		{
-			if (oasys.is_jis(jis))
-			{
-				sjis = oasys.jis2sjis(jis);
-				w_flag = true;
-			}
-		}
-
-		// 下線付きの全角英数、かな
-		if ((jis & 0x8080) == 0x8000)
-		{
-			jis &= 0x7F7F;
-			if (oasys.is_jis(jis))
-			{
-				sjis = oasys.jis2sjis(jis);
-				w_flag = true;
-			}
-		}
-
-		//JISコードの範囲外
-		if (w_flag == false)
-		{
-			// ESC(?) シーケンス
-			switch (jis)
-			{
-			case 0x203F:
-				// AS-ISで半角スペース2個
-				sjis = 0x2020;
-				w_flag = true;
-				break;
-			case 0x2C66:
-				// AS-ISで全角空白(?)
-				sjis = 0x8140;
-				w_flag = true;
-				break;
-			case 0x2F2A:
-				// 拡大文字の後に付いているので全角スペースに変換する
-				sjis = 0x8140;
-				w_flag = true;
-				break;
-			case 0x2F7D:
-				// 次の2バイトは制御コードっぽいので無視する
-				i += 2;
-				break;
-			}
-		}
-
-		i++;
-
-		// 不要な制御コードを削除
-		if (w_flag == false)
-			continue;
-
-		// 出力ファイルに書き込む
-		char s[2];
-		s[0] = (sjis >> 8) & 0xFF;
-		s[1] = sjis & 0xFF;
-		ofs.write((char*)s, sizeof(char) * 2);
-		num_byte += 2;
 	}
 
+	ifs.close();
 	ofs.close();
-	delete[] data;
 
-	std::cout << "S-JISコードでテキストファイルに出力しました。" << std::endl;
+	std::cout << "SJISコードでテキストファイルに出力しました。" << std::endl;
 	std::cout << "output file = \"" << outputFile << "\"" << std::endl;
-	std::cout << num_byte << " bytes" << std::endl;
+	std::cout << std::dec << lines << " lines" << std::endl;
 	std::cout << std::endl;
 
 	return 0;

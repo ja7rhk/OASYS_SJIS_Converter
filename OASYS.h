@@ -1,5 +1,6 @@
 #pragma once
 
+#define BLOCK	0x400	// 1024 byte
 
 // 半角カナの修飾コード
 enum KANA_MOD
@@ -12,31 +13,44 @@ enum KANA_MOD
 	INVALID			// 半角'?'
 };
 
-typedef struct {
-	char	c1;
-	char	c2;
-} Ascii_Kana;
-
-typedef struct {
-	int	 kana_code;
-	KANA_MOD kana_mod;
-} Hankaku_Kana;
+typedef struct { char c1; char c2; } Ascii_Kana;
+typedef struct { int kana_code; KANA_MOD kana_mod; } Hankaku_Kana;
+typedef struct { char data[512]; char hk[5]; } Oasys_Frame;
 
 class OASYS
 {
 
 public:
 
-	wchar_t jis2sjis(wchar_t jis);
+	OASYS(int wchars);
 
-	bool is_ascii(char ascii);
+	char buf[BLOCK];	// OASYS文書を1ブロック格納
+	char out[BLOCK];	// 変換後のTEXTを1ブロック格納
 
-	bool is_jis(wchar_t jis);
+	void clear_buf();
+	void clear_out();
 
-	Ascii_Kana oasys_to_sjis (char h);
-
+	// ブロック単位のSJIS変換
+	int oasys_to_text();
 
 private:
+
+	int fold_wchars = 0x30;		// 折り返し文字数(2バイト文字)
+
+	Oasys_Frame oasys_frame;
+	Oasys_Frame sjis_frame;
+
+	void clear_frame();
+
+	// OASYSフレーム単位のSJIS変換
+	int convert_frame();
+
+	wchar_t jis_to_sjis(wchar_t jis);
+	bool is_ascii(char ascii);
+	bool is_jis(wchar_t jis);
+
+	// 半角OASYS文字をASCIIカナに変換
+	Ascii_Kana hankaku_oasys_to_sjis_kana(char h);
 
 	Hankaku_Kana hankaku_kana[128] =
 	{
