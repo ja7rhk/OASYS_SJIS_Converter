@@ -62,9 +62,26 @@ wchar_t OASYS::jis_to_sjis(wchar_t jis) {
 }
 
 // ASCIIコード範囲内かチェック
-bool OASYS::is_ascii(char ascii) {
+bool OASYS::is_ascii(wchar_t ascii) {
 
-	if (ascii >= 0x20 && ascii < 0x7F)
+	wchar_t jis_high = (ascii >> 8) & 0x7F;
+	wchar_t jis_low = ascii & 0x7F;
+
+	// ASCII
+	if ((jis_high >= 0x20 && jis_high <= 0x7E) && (jis_low >= 0x20 && jis_low <= 0x7E))
+		return true;
+
+	return false;
+}
+
+// 半角カナまたは上付きASCIIの範囲内かチェック
+bool OASYS::is_kana(wchar_t kana) {
+
+	wchar_t jis_high = (kana >> 8) & 0xFF;
+	wchar_t jis_low = kana & 0xFF;
+
+	// 半角カナ
+	if ((jis_high >= 0x81 && jis_high <= 0xFE) && (jis_low >= 0x81 && jis_low <= 0xFE))
 		return true;
 
 	return false;
@@ -141,40 +158,41 @@ int OASYS::convert_frame() {
 		// 半角英数の場合 (ASCIIコード)
 		if ((jis & 0x8080) == 0x0080)
 		{
-			if (OASYS::is_ascii(jis_high))
+			if (is_ascii(jis))
 			{
 				OASYS::sjis_frame.data[sjis_ptr] = jis_high; sjis_ptr++;
+				// 2バイト目が'_'の場合は半角詰めなので変換しない
+				jis_low &= 0x7F;
+				if (jis_low != 0x5F)
+				{
+					OASYS::sjis_frame.data[sjis_ptr] = jis_low; sjis_ptr++;
+				}
 			}
-			// 2バイト目が'_'の場合は半角詰めなので変換しない
-			jis_low &= 0x7F;
-			if (OASYS::is_ascii(jis_low) && jis_low != 0x5F)
-			{
-				OASYS::sjis_frame.data[sjis_ptr] = jis_low; sjis_ptr++;
-			}
-			//continue;
 		}
 		// 半角カナまたは上付き文字の場合 (ASCIIコード)
 		if ((jis & 0x8080) == 0x8080)
 		{
-			// 1文字目のOASYSコードをASCIIに変換
-			Ascii_Kana kana = OASYS::hankaku_to_sjis_kana(jis_high);
-			OASYS::sjis_frame.data[sjis_ptr] = kana.c1; sjis_ptr++;
-			if (kana.c2)
+			if (is_kana(jis))
 			{
-				OASYS::sjis_frame.data[sjis_ptr] = kana.c2; sjis_ptr++;
-			}
-			// 2文字目のOASYSコードをASCIIに変換
-			kana = OASYS::hankaku_to_sjis_kana(jis_low);
-			// 2バイト目が'_'の場合は半角詰めなので変換しない
-			if (kana.c1 != 0x5F)
-			{
+				// 1文字目のOASYSコードをASCIIに変換
+				Ascii_Kana kana = OASYS::hankaku_to_sjis_kana(jis_high);
 				OASYS::sjis_frame.data[sjis_ptr] = kana.c1; sjis_ptr++;
+				if (kana.c2)
+				{
+					OASYS::sjis_frame.data[sjis_ptr] = kana.c2; sjis_ptr++;
+				}
+				// 2文字目のOASYSコードをASCIIに変換
+				kana = OASYS::hankaku_to_sjis_kana(jis_low);
+				// 2バイト目が'_'の場合は半角詰めなので変換しない
+				if (kana.c1 != 0x5F)
+				{
+					OASYS::sjis_frame.data[sjis_ptr] = kana.c1; sjis_ptr++;
+				}
+				if (kana.c2)
+				{
+					OASYS::sjis_frame.data[sjis_ptr] = kana.c2; sjis_ptr++;
+				}
 			}
-			if (kana.c2)
-			{
-				OASYS::sjis_frame.data[sjis_ptr] = kana.c2; sjis_ptr++;
-			}
-			//continue;
 		}
 		// 全角英数、かな
 		if ((jis & 0x8080) == 0)

@@ -46,7 +46,8 @@ private:
 	int convert_frame();
 
 	wchar_t jis_to_sjis(wchar_t jis);
-	bool is_ascii(char ascii);
+	bool is_ascii(wchar_t ascii);
+	bool is_kana(wchar_t kana);
 	bool is_jis(wchar_t jis);
 
 	// ”¼ŠpOASYS•¶Žš‚ðASCIIƒJƒi‚É•ÏŠ·
