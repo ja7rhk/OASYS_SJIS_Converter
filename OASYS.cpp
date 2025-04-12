@@ -198,6 +198,14 @@ int OASYS::convert_frame() {
 		//JISコードの範囲外
 		if (w_flag == false)
 		{
+			jis &= 0x7F7F;
+			// OASYS罫線 0x2C21～0x2C7E は全角空白
+			if ((jis > 0x2C20) && (jis < 0x2C7F))
+			{
+				sjis = 0x2020;
+				w_flag = true;
+			}
+
 			// ESC(?) シーケンス
 			switch (jis)
 			{
