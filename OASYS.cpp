@@ -161,7 +161,7 @@ int OASYS::convert_frame() {
 			OASYS::sjis_frame.data[sjis_ptr] = kana.c1; sjis_ptr++;
 			if (kana.c2)
 			{
-				OASYS::sjis_frame.data[sjis_ptr] = kana.c1; sjis_ptr++;
+				OASYS::sjis_frame.data[sjis_ptr] = kana.c2; sjis_ptr++;
 			}
 			// 2•¶š–Ú‚ÌOASYSƒR[ƒh‚ğASCII‚É•ÏŠ·
 			kana = OASYS::hankaku_to_sjis_kana(jis_low);
