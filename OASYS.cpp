@@ -224,6 +224,13 @@ int OASYS::convert_frame() {
 				w_flag = true;
 			}
 
+			// ○付き数字(0～20)
+			if ((jis >= 0x2949) && (jis <= 0x295C))
+			{
+				sjis = (jis - 0x2949) + 0x8740;	// jis 0x2949 ① は sjis 0x8740
+				w_flag = true;
+			}
+
 			// ESC(?) シーケンス
 			switch (jis)
 			{
