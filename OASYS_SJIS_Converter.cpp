@@ -50,10 +50,12 @@ int main(int argc, char* argv[])
 	}
 	std::cout << "input file = \"" << inputFile << "\"" << std::endl;
 
-	//読込サイズを調べる。
+	// ファイルサイズを調べる。
 	ifs.seekg(0, std::ios::end);
 	const uint64_t size = ifs.tellg();
 	ifs.seekg(0, std::ios::beg);
+	// 収容可能な文書ブロック数
+	int blocks = (size - OASYS_BASE) / 0x400;
 
 	// 出力ファイル名
 	std::string outputFile = inputFile.substr(0, idx) + ".txt";
@@ -74,7 +76,7 @@ int main(int argc, char* argv[])
 	int num_line = 0;
 	int page_lines = 0xFF;		// ライン数
 	int line_wchar = 0x30;		// 行毎の文字数(2バイト文字)
-	int online_bloacks = 0;		// ブロック数(2バイト)
+	int online_blocks = 0;		// ブロック数(2バイト)
 	int lines = 0;
 
 	// 書式パラメータの読出し
@@ -84,7 +86,10 @@ int main(int argc, char* argv[])
 
 	char obh = index[ONLINE_BLOCKS_INDEX];
 	char obl  = index[ONLINE_BLOCKS_INDEX + 1];
-	online_bloacks = obh << 8 | obl & 0xFF;
+	online_blocks = obh << 8 | obl & 0xFF;
+
+	if (online_blocks > blocks)
+		std::cout << "文書ブロック数が収容可能ブロック数を超えています。" << std::endl;
 
 	// OASYS文書の読出し
 	OASYS oasys(line_wchar);
@@ -92,7 +97,7 @@ int main(int argc, char* argv[])
 	ifs.seekg(OASYS_BASE, std::ios::beg);
 	int line_cntr = 0;
 
-	for (int block = 0; block < online_bloacks; block++)
+	for (int block = 0; block < online_blocks; block++)
 	{
 		oasys.clear_buf();
 		oasys.clear_out();
