@@ -9,12 +9,6 @@
 #define HEADER_BASE	0x200		// 0x200
 #define OASYS_BASE	0x300		// 
 
-#define	PAGE_LINRS_INDEX	8		// 1ページ当たりの行数
-#define	LINE_WCHARS_INDEX	0x74	// 行当たりの文字数 (2バイト分)
-#define FOLD_WCHARS_INDEX	0x75	// 折り返し文字数 (2バイト文字分)
-#define ONLINE_BLOCKS_INDEX	0x7F	// ブロック数 (2バイト)
-
-
 int main(int argc, char* argv[])
 {
 	if (argc != 2)
@@ -67,9 +61,11 @@ int main(int argc, char* argv[])
 	}
 
 	// INDEXを読み込む
-	char index[0x100];
+	//char index[0x100];
+	Oasys_Index index;
 	ifs.seekg(HEADER_BASE, std::ios::beg);
-	ifs.read(index, 0x100);
+	//ifs.read(index, 0x100);
+	ifs.read(&index.start, 0x100);
 
 	// OASYS本文を変換
 	int num_byte = 0;
@@ -80,14 +76,11 @@ int main(int argc, char* argv[])
 	int lines = 0;
 
 	// 書式パラメータの読出し
-	page_lines = index[PAGE_LINRS_INDEX];
-	line_wchar = index[LINE_WCHARS_INDEX];
-	//fold_wchar = index[FOLD_WCHARS_INDEX];
+	page_lines = index.page_lines;
+	line_wchar = index.line_wchars;
+	online_blocks = index.online_blocks;
 
-	char obh = index[ONLINE_BLOCKS_INDEX];
-	char obl  = index[ONLINE_BLOCKS_INDEX + 1];
-	online_blocks = obh << 8 | obl & 0xFF;
-
+	// ブロック数が正しいかチェック
 	if (online_blocks > blocks)
 		std::cout << "文書ブロック数が収容可能ブロック数を超えています。" << std::endl;
 

@@ -14,8 +14,23 @@ enum KANA_MOD
 };
 
 typedef struct { char c1; char c2; } Ascii_Kana;
+
 typedef struct { int kana_code; KANA_MOD kana_mod; } Hankaku_Kana;
+
 typedef struct { char data[512]; char attr[5]; } Oasys_Frame;
+
+typedef struct {
+	char	start;				/* 0x00		1	開始	*/
+	char	pad_a[7];			/* 0x01-07	7	パッド	*/
+	char	page_lines;			/* 0x08		1	0-255	行数/ページ		*/
+	char	pad_b[107];			/* 0x09-73	107	パッド	*/
+	char	line_wchars;		/* 0x74		1	48	文字数/行コピー		*/
+	char	fold_wchars;		/* 0x75		1	48	折り返し文字数コピー	*/
+	char	pad_c[9];			/* 0x76-7E	9	パッド	*/
+	wchar_t	online_blocks;		/* 0x7F		2	ブロック数(ONLINE)	*/
+	char	pad_d[127];			/* 0x81-FF	127	パッド	*/
+} Oasys_Index;
+
 
 class OASYS
 {
